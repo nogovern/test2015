@@ -5,74 +5,77 @@ Route::get('/', function()
 			->whereNull('parent_id')
 			->get();
 
-	$cur = \Leojang\Menu::query()
-			->whereName('여름')
-			->first();
-
-	// 1
-	$path = array();
-	// array_unshift($path, $cur->name);
-
-	// // 2
-	// $cur = $cur->parent();
-	// array_unshift($path, $cur->name);
-
-	// // 3
-	// $cur = $cur->parent();
-	// array_unshift($path, $cur->name);
-	while($cur)
-	{
-		array_unshift($path, $cur->name);
-		$cur = $cur->parent();
+	// 캐싱 사용
+	if (! Cache::has('menu'))	
+	{	
+		Cache::put('menu', display($menus), 60);
 	}
 
-	return $path;
+	if(0)
+	{
+		$content = Cache::get('menu'); 
+	} else {
+		$content = display($menus);
+	}
 
-	// $tree = new FullTree($menus);
-
-	return $tree;
+	return View::make('index', compact('content', 'content2'));
 });
 
-class FullTree {
+// recursive call
+// div, a 목록으로 출력
+function display($items)
+{
+	$options = ['class' => 'list-group-item'];
 
-	protected $menus = array();
+	$html = '<div class="list-group">' . PHP_EOL;
 
-	protected $items;
-
-	public function __construct(Illuminate\Support\Collection $items)
-	{
-		$this->items = $items;
-		$this->build();
-	}
-
-	protected function build()
-	{
-		foreach($this->items as $item)
+	foreach($items as $item)
+	{	
+		if ( $item->name == 'products') 
 		{
-			$this->menus;
+			$options['class'] .= ' active';
 		}
-	}
 
-	protected function traverse($item)
-	{
-		if (! $item->hasChild())
+		$html .= link_to('#', $item->name, $options) . PHP_EOL;
+
+		if ($item->hasChild())
 		{
-			return ($item->name);
-		}
-		else 
-		{	
-			$children = $item->children()->get();
-			foreach($children as $child)
-			{
-				$this->traverse($child);
-			}
-			
-			return($item->name);
-		}
+			$sub_itmes = $item->children()->get();
+			$html .= display($sub_itmes);		// recursive call
+		} 
 	}
+	$html .= '</div>' . PHP_EOL;
 
-	public function __toString()
-	{
-		return json_encode($this->menus);
+	return $html;
+}
+
+// ul, li 목록으로 출력
+function display2($items)
+{
+	$options = ['class' => 'list-group-item'];
+
+	$html = '<ul class="list-group">' . PHP_EOL;
+
+	foreach($items as $item)
+	{	
+		$html .= '<li>';
+
+		if ( $item->name == 'shop') 
+		{
+			$options['class'] .= ' active';
+		}
+
+		$html .= link_to('#', $item->name, $options) . PHP_EOL;
+
+		if ($item->hasChild())
+		{
+			$sub_itmes = $item->children()->get();
+			$html .= display2($sub_itmes);		// recursive call
+		} 
+
+		$html .= '</li>';
 	}
+	$html .= '</ul>' . PHP_EOL;
+
+	return $html;
 }

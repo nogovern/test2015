@@ -12,8 +12,7 @@ class Menu extends \Eloquent {
 	
 	public function parent()
 	{
-		$query = $this->belongsTo(get_class($this), 'parent_id');
-		return $query->first();
+		return $this->belongsTo(get_class($this), 'parent_id');
 	}
 
 	public function children()
